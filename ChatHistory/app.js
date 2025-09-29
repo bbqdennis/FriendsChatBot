@@ -122,10 +122,12 @@ identitySelect.addEventListener('change', () => {
   setStatus(`目前以「${formatDisplayName(state.selfName)}」作為本人身份顯示`);
 });
 
+// Updates the live status bar with feedback about loading or search results.
 function setStatus(message) {
   statusBar.textContent = message;
 }
 
+// Handles the file input change, parses the MSN XML, and renders the conversation.
 function handleFileSelection(event) {
   const file = event.target.files?.[0];
   if (!file) {
@@ -161,6 +163,7 @@ function handleFileSelection(event) {
   reader.readAsText(file, 'utf-8');
 }
 
+// Enables interactive controls once a conversation has been successfully loaded.
 function enableControls() {
   reloadBtn.disabled = false;
   searchInput.disabled = false;
@@ -168,6 +171,7 @@ function enableControls() {
   searchInput.focus();
 }
 
+// Resets application state and UI back to the initial empty landing view.
 function resetApp() {
   state.messages = [];
   state.participants = new Map();
@@ -189,6 +193,7 @@ function resetApp() {
   setStatus('尚未載入檔案。');
 }
 
+// Stores the current search term and re-renders messages with highlights when needed.
 function triggerSearch() {
   state.searchTerm = searchInput.value.trim();
   if (!state.messages.length) {
@@ -198,6 +203,7 @@ function triggerSearch() {
   renderMessages(state.searchTerm);
 }
 
+// Populates the identity dropdown so users can choose which nickname represents them.
 function populateIdentityOptions() {
   const participantNames = [...state.participants.keys()].filter(Boolean);
   if (!participantNames.length) {
@@ -222,6 +228,7 @@ function populateIdentityOptions() {
   identityGroup.hidden = participantNames.length <= 1;
 }
 
+// Builds the DOM chat view from message data and applies optional search highlighting.
 function renderMessages(searchTerm) {
   chatContainer.innerHTML = '';
 
@@ -279,6 +286,7 @@ function renderMessages(searchTerm) {
   }
 }
 
+// Produces safe, emoji-enhanced HTML for a message body with optional highlights.
 function formatMessageText(rawText, normalizedTerm) {
   if (!rawText) {
     return '<em>（無內容）</em>';
@@ -295,6 +303,7 @@ function formatMessageText(rawText, normalizedTerm) {
   return replaceEmoticons(highlighted.replace(/\n/g, '<br />'));
 }
 
+// Formats a Date object into the zh-Hant chat timestamp seen in bubbles.
 function formatDate(date) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
     return '未知時間';
@@ -309,6 +318,7 @@ function formatDate(date) {
   }).format(date);
 }
 
+// Escapes HTML so log content cannot break the rendered document structure.
 function escapeHtml(text) {
   return text
     .replace(/&/g, '&amp;')
@@ -318,10 +328,12 @@ function escapeHtml(text) {
     .replace(/'/g, '&#39;');
 }
 
+// Escapes characters that have special meaning inside regular expressions.
 function escapeRegExp(text) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// Replaces MSN emoticon shortcuts with their emoji counterparts inside HTML.
 function replaceEmoticons(html) {
   let output = html;
   EMOTICON_PATTERNS.forEach(({ regex, emoji }) => {
@@ -330,6 +342,7 @@ function replaceEmoticons(html) {
   return output;
 }
 
+// Applies emoticon replacement to participant names with a fallback label.
 function formatDisplayName(name) {
   if (!name) {
     return '未知發送者';
@@ -337,6 +350,7 @@ function formatDisplayName(name) {
   return replaceEmoticons(name);
 }
 
+// Displays an error banner inside the chat window with the provided message.
 function showError(message) {
   chatContainer.innerHTML = `
     <div class="error-banner">
@@ -347,6 +361,7 @@ function showError(message) {
   `;
 }
 
+// Parses MSN Messenger export XML into message objects and participant stats.
 function parseMsnXml(xmlString) {
   if (!xmlString || typeof xmlString !== 'string') {
     throw new Error('無法讀取檔案內容。');
@@ -397,6 +412,7 @@ function parseMsnXml(xmlString) {
   return { messages, participants, document: doc };
 }
 
+// Normalizes a <Message> element into the internal message record structure.
 function decodeMessageNode(node, index) {
   const sender = extractSender(node) || '未知發送者';
   const text = extractMessageText(node);
@@ -410,6 +426,7 @@ function decodeMessageNode(node, index) {
   };
 }
 
+// Retrieves the sender's friendly name from attributes or nested metadata.
 function extractSender(node) {
   const attrKeys = [
     'FriendlyName',
@@ -432,6 +449,7 @@ function extractSender(node) {
   return nested || '';
 }
 
+// Recursively searches nodes for the first friendly-name style attribute or text.
 function findFriendlyName(contextNode, allowTextFallback = false) {
   if (!contextNode) {
     return '';
@@ -474,6 +492,7 @@ function findFriendlyName(contextNode, allowTextFallback = false) {
   return '';
 }
 
+// Pulls the textual payload for a message, handling both Text nodes and inline text.
 function extractMessageText(node) {
   const textNodes = [...node.getElementsByTagName('Text')];
   if (textNodes.length) {
@@ -493,6 +512,7 @@ function extractMessageText(node) {
   return alt;
 }
 
+// Gathers text from nested nodes, keeping emoticon shortcuts and link hints.
 function collectTextContent(node) {
   const fragments = [];
   node.childNodes.forEach((child) => {
@@ -514,6 +534,7 @@ function collectTextContent(node) {
   return fragments.join('');
 }
 
+// Extracts or synthesizes the best available timestamp from a message node.
 function extractTimestamp(node) {
   const attributeCandidates = [
     'DateTime',
@@ -542,6 +563,7 @@ function extractTimestamp(node) {
   return parsed;
 }
 
+// Merges separate date and time attribute fragments into a single string.
 function combineTimestamp(previous, nextPart) {
   if (!previous) {
     return nextPart;
@@ -555,6 +577,7 @@ function combineTimestamp(previous, nextPart) {
   return previous;
 }
 
+// Tries multiple timestamp formats to produce a valid Date object.
 function parseTimestampString(value) {
   if (!value) {
     return null;
@@ -585,6 +608,7 @@ function parseTimestampString(value) {
   return null;
 }
 
+// Reads an attribute value without caring about the original casing of the key.
 function getAttributeCaseInsensitive(node, attributeName) {
   const direct = node.getAttribute(attributeName);
   if (direct) {
@@ -602,6 +626,7 @@ function getAttributeCaseInsensitive(node, attributeName) {
   return null;
 }
 
+// Guesses which participant represents the local user for bubble alignment defaults.
 function inferSelfIdentity(parsed, messages) {
   const { document: doc, participants } = parsed;
   const candidateNames = new Set();
