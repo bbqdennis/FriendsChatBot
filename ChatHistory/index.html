@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MSN Chat Viewer</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <h1>MSN Chat Viewer</h1>
+      </header>
+
+      <main class="app-main" role="main">
+        <section class="file-controls" aria-label="檔案控制">
+          <label class="file-picker">
+            <input type="file" id="fileInput" accept=".xml" />
+            <span>選擇 MSN XML 對話檔案</span>
+          </label>
+          <button id="reloadBtn" type="button" class="ghost-button" disabled>重新載入</button>
+        </section>
+
+        <section class="search-controls" aria-label="搜尋訊息">
+          <div class="search-group">
+            <span aria-hidden="true" class="search-icon">🔍</span>
+            <input
+              id="searchInput"
+              type="text"
+              placeholder="搜尋關鍵字"
+              autocomplete="off"
+              disabled
+            />
+            <button id="searchBtn" type="button" disabled>搜尋</button>
+          </div>
+          <div class="identity-group" id="identityGroup" hidden>
+            <label for="identitySelect">我的暱稱：</label>
+            <select id="identitySelect"></select>
+          </div>
+        </section>
+
+        <section class="status-bar" aria-live="polite" id="statusBar">
+          尚未載入檔案。
+        </section>
+
+        <section class="chat-window" id="chatContainer" aria-live="polite">
+          <div class="empty-state">
+            <p>選擇一個 MSN 對話記錄檔開始瀏覽。</p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>
