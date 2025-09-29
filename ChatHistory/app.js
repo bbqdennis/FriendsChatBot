@@ -15,6 +15,97 @@ const state = {
   searchTerm: '',
 };
 
+const EMOTICON_MAP = {
+  ':)': '😊',
+  ':-)': '😊',
+  '=)': '😊',
+  ':D': '😄',
+  ':-D': '😄',
+  '=D': '😄',
+  ':(': '☹️',
+  ':-(': '☹️',
+  ':O': '😮',
+  ':-O': '😮',
+  ':P': '😛',
+  ':-P': '😛',
+  ';)': '😉',
+  ';-)': '😉',
+  ':S': '😖',
+  ':-S': '😖',
+  ':@': '😡',
+  ':-@': '😡',
+  ':$': '😳',
+  ':-$': '😳',
+  ':|': '😐',
+  ':-|': '😐',
+  ":'(": '😢',
+  '(H)': '😎',
+  '(h)': '😎',
+  '(A)': '😇',
+  '(a)': '😇',
+  '8O|': '😱',
+  '8o|': '😱',
+  '8-|': '😑',
+  '+O(': '🤢',
+  '+o(': '🤢',
+  ':-#': '🤐',
+  ':-*': '😘',
+  '^o)': '😜',
+  '8-)': '🤓',
+  ':-^)': '😏',
+  '(L)': '❤️',
+  '(l)': '❤️',
+  '(U)': '💔',
+  '(u)': '💔',
+  '(M)': '👫',
+  '(m)': '👫',
+  '(@)': '🐱',
+  '(&)': '🐶',
+  '(sn)': '🐌',
+  '(bah)': '🐑',
+  '(Y)': '👍',
+  '(y)': '👍',
+  '(N)': '👎',
+  '(n)': '👎',
+  '(B)': '🍺',
+  '(b)': '🍺',
+  '(C)': '☕',
+  '(c)': '☕',
+  '(S)': '🌙',
+  '(s)': '🌙',
+  '(*)': '⭐',
+  '(8)': '🎶',
+  '(R)': '🌈',
+  '(r)': '🌈',
+  '(I)': '💡',
+  '(i)': '💡',
+  '(G)': '🎁',
+  '(g)': '🎁',
+  '(F)': '🌹',
+  '(f)': '🌹',
+  '(W)': '🥀',
+  '(w)': '🥀',
+  '(K)': '💋',
+  '(k)': '💋',
+  '(O)': '🕘',
+  '(o)': '🕘',
+};
+
+const EMOTICON_PATTERNS = Object.entries(EMOTICON_MAP)
+  .flatMap(([code, emoji]) => {
+    const variants = [[code, emoji]];
+    const htmlSafe = escapeHtml(code);
+    if (htmlSafe !== code) {
+      variants.push([htmlSafe, emoji]);
+    }
+    return variants;
+  })
+  .sort((a, b) => b[0].length - a[0].length)
+  .map(([code, emoji]) => ({
+    regex: new RegExp(escapeRegExp(code), /[A-Za-z]/.test(code) ? 'gi' : 'g'),
+    emoji,
+  }));
+
 fileInput.addEventListener('change', handleFileSelection);
 reloadBtn.addEventListener('click', resetApp);
 searchBtn.addEventListener('click', triggerSearch);
@@ -194,13 +285,13 @@ function formatMessageText(rawText, normalizedTerm) {
 
   const escaped = escapeHtml(rawText);
   if (!normalizedTerm) {
-    return escaped.replace(/\n/g, '<br />');
+    const withBreaks = escaped.replace(/\n/g, '<br />');
+    return replaceEmoticons(withBreaks);
   }
 
   const regex = new RegExp(`(${escapeRegExp(normalizedTerm)})`, 'gi');
-  return escaped
-    .replace(regex, '<mark class="highlight">$1</mark>')
-    .replace(/\n/g, '<br />');
+  const highlighted = escaped.replace(regex, '<mark class="highlight">$1</mark>');
+  return replaceEmoticons(highlighted.replace(/\n/g, '<br />'));
 }
 
 function formatDate(date) {
@@ -228,6 +319,14 @@ function escapeHtml(text) {
 
 function escapeRegExp(text) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function replaceEmoticons(html) {
+  let output = html;
+  EMOTICON_PATTERNS.forEach(({ regex, emoji }) => {
+    output = output.replace(regex, emoji);
+  });
+  return output;
 }
 
 function showError(message) {
