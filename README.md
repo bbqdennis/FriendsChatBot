@@ -19,7 +19,11 @@ _All functions live in `ChatHistory/app.js`._
 - `enableControls()` – Unlocks search/reload controls once a log loads successfully.
 - `resetApp()` – Clears state, UI, and returns the viewer to the landing state.
 - `triggerSearch()` – Stores the current keyword and re-renders messages with highlights.
-- `populateIdentityOptions()` – Refreshes the "我的暱稱" selector using parsed participant names.
+- `populateIdentityOptions()` – Refreshes the "我的暱稱" selector and synchronises the badge list.
+- `renderSelectedIdentities()` – Renders the selected nicknames as removable badges beside the selector.
+- `addCurrentIdentity()` – Adds the currently highlighted nickname into the “self” alias list.
+- `removeIdentity(name)` – Removes a chosen alias and refreshes the chat alignment immediately.
+- `updateIdentityAddState()` – Enables or disables the add button based on availability and duplicates.
 - `renderMessages(searchTerm)` – Builds the chat transcript DOM and applies match highlighting.
 - `formatMessageText(rawText, normalizedTerm)` – Converts message text into safe HTML with emoji, highlights, and line breaks.
 - `formatDate(date)` – Formats message timestamps using a zh-Hant presentation.

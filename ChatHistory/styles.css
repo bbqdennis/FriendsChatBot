@@ -155,23 +155,82 @@ body {
 
 .identity-group {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   background: var(--panel-color);
-  border-radius: 999px;
+  border-radius: 16px;
   border: 1px solid var(--border-color);
-  padding: 6px 12px;
+  padding: 8px 12px;
 }
 
-.identity-group select {
-  border: none;
+.identity-group label {
+  font-weight: 600;
+  color: var(--text-subtle);
+}
+
+.identity-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.identity-controls select {
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 8px 12px;
   background: transparent;
   font-size: 0.95rem;
   color: inherit;
 }
 
-.identity-group select:focus {
+.identity-controls select:focus {
   outline: none;
+  border-color: var(--primary);
+}
+
+.identity-controls .ghost-button {
+  padding: 8px 14px;
+}
+
+.identity-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.identity-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(0, 102, 204, 0.12);
+  border: 1px solid rgba(0, 102, 204, 0.2);
+  color: var(--text-main);
+}
+
+.identity-badge .identity-label {
+  font-size: 0.9rem;
+}
+
+.identity-remove {
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.identity-remove:hover {
+  color: var(--primary-dark);
+}
+
+.identity-placeholder {
+  font-size: 0.9rem;
+  color: var(--text-subtle);
 }
 
 .status-bar {

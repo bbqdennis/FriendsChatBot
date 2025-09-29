@@ -6,12 +6,14 @@ const chatContainer = document.getElementById('chatContainer');
 const statusBar = document.getElementById('statusBar');
 const identityGroup = document.getElementById('identityGroup');
 const identitySelect = document.getElementById('identitySelect');
+const addIdentityBtn = document.getElementById('addIdentityBtn');
+const selectedIdentities = document.getElementById('selectedIdentities');
 
 const state = {
   messages: [],
   participants: new Map(),
   fileName: '',
-  selfName: '',
+  selfNames: [],
   searchTerm: '',
 };
 
@@ -116,11 +118,14 @@ searchInput.addEventListener('keydown', (event) => {
     triggerSearch();
   }
 });
-identitySelect.addEventListener('change', () => {
-  state.selfName = identitySelect.value;
-  renderMessages(state.searchTerm);
-  setStatus(`目前以「${formatDisplayName(state.selfName)}」作為本人身份顯示`);
+identitySelect.addEventListener('change', updateIdentityAddState);
+identitySelect.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    addCurrentIdentity();
+  }
 });
+addIdentityBtn.addEventListener('click', addCurrentIdentity);
 
 // Updates the live status bar with feedback about loading or search results.
 function setStatus(message) {
@@ -141,7 +146,8 @@ function handleFileSelection(event) {
       state.messages = parsed.messages;
       state.participants = parsed.participants;
       state.fileName = file.name;
-      state.selfName = inferSelfIdentity(parsed, parsed.messages);
+      const inferred = inferSelfIdentity(parsed, parsed.messages);
+      state.selfNames = inferred ? [inferred] : [];
       state.searchTerm = '';
 
       enableControls();
@@ -176,7 +182,7 @@ function resetApp() {
   state.messages = [];
   state.participants = new Map();
   state.fileName = '';
-  state.selfName = '';
+  state.selfNames = [];
   state.searchTerm = '';
   fileInput.value = '';
   searchInput.value = '';
@@ -185,6 +191,8 @@ function resetApp() {
   reloadBtn.disabled = true;
   identityGroup.hidden = true;
   identitySelect.innerHTML = '';
+  renderSelectedIdentities();
+  updateIdentityAddState();
   chatContainer.innerHTML = `
     <div class="empty-state">
       <p>選擇一個 MSN 對話記錄檔開始瀏覽。</p>
@@ -206,11 +214,6 @@ function triggerSearch() {
 // Populates the identity dropdown so users can choose which nickname represents them.
 function populateIdentityOptions() {
   const participantNames = [...state.participants.keys()].filter(Boolean);
-  if (!participantNames.length) {
-    identityGroup.hidden = true;
-    return;
-  }
-
   identitySelect.innerHTML = '';
   participantNames.forEach((name) => {
     const option = document.createElement('option');
@@ -219,18 +222,110 @@ function populateIdentityOptions() {
     identitySelect.appendChild(option);
   });
 
-  const defaultName = participantNames.includes(state.selfName)
-    ? state.selfName
-    : participantNames[0];
+  state.selfNames = state.selfNames.filter((name) => participantNames.includes(name));
 
-  state.selfName = defaultName;
-  identitySelect.value = defaultName;
-  identityGroup.hidden = participantNames.length <= 1;
+  if (!state.selfNames.length && participantNames.length) {
+    state.selfNames.push(participantNames[0]);
+  }
+
+  const nextSelectable = participantNames.find((name) => !state.selfNames.includes(name))
+    || participantNames[0]
+    || '';
+
+  if (nextSelectable) {
+    identitySelect.value = nextSelectable;
+  }
+
+  identityGroup.hidden = participantNames.length === 0;
+  renderSelectedIdentities();
+  updateIdentityAddState();
+}
+
+// Renders the selected self nicknames as removable badges for quick reference.
+function renderSelectedIdentities() {
+  selectedIdentities.innerHTML = '';
+
+  if (!state.selfNames.length) {
+    const placeholder = document.createElement('span');
+    placeholder.className = 'identity-placeholder';
+    placeholder.textContent = '尚未選擇本人暱稱';
+    selectedIdentities.appendChild(placeholder);
+    return;
+  }
+
+  state.selfNames.forEach((name) => {
+    const badge = document.createElement('span');
+    badge.className = 'identity-badge';
+
+    const label = document.createElement('span');
+    label.className = 'identity-label';
+    label.textContent = formatDisplayName(name);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'identity-remove';
+    removeBtn.setAttribute('aria-label', `移除 ${name}`);
+    removeBtn.textContent = '×';
+    removeBtn.addEventListener('click', () => removeIdentity(name));
+
+    badge.append(label, removeBtn);
+    selectedIdentities.appendChild(badge);
+  });
+}
+
+// Adds the currently selected nickname to the self list if it is not already chosen.
+function addCurrentIdentity() {
+  const selectedName = identitySelect.value;
+  if (!selectedName) {
+    setStatus('請先選擇暱稱後再加入。');
+    return;
+  }
+  if (state.selfNames.includes(selectedName)) {
+    setStatus(`「${formatDisplayName(selectedName)}」已在本人暱稱列表中。`);
+    return;
+  }
+
+  state.selfNames.push(selectedName);
+
+  const nextOption = [...identitySelect.options].find(
+    (option) => option.value && !state.selfNames.includes(option.value),
+  );
+  if (nextOption) {
+    identitySelect.value = nextOption.value;
+  }
+
+  renderSelectedIdentities();
+  renderMessages(state.searchTerm);
+  setStatus(`已加入「${formatDisplayName(selectedName)}」作為本人暱稱。`);
+  updateIdentityAddState();
+}
+
+// Removes the provided nickname from the self list and refreshes the transcript.
+function removeIdentity(name) {
+  state.selfNames = state.selfNames.filter((entry) => entry !== name);
+
+  const optionExists = [...identitySelect.options].some((option) => option.value === name);
+  if (optionExists) {
+    identitySelect.value = name;
+  }
+
+  renderSelectedIdentities();
+  renderMessages(state.searchTerm);
+  setStatus(`已移除「${formatDisplayName(name)}」暱稱。`);
+  updateIdentityAddState();
+}
+
+// Enables or disables the add button based on current selection and duplicates.
+function updateIdentityAddState() {
+  const selectedName = identitySelect.value;
+  const canAdd = Boolean(selectedName) && !state.selfNames.includes(selectedName);
+  addIdentityBtn.disabled = !canAdd;
 }
 
 // Builds the DOM chat view from message data and applies optional search highlighting.
 function renderMessages(searchTerm) {
   chatContainer.innerHTML = '';
+  chatContainer.scrollTop = 0;
 
   if (!state.messages.length) {
     chatContainer.innerHTML = `
@@ -247,7 +342,7 @@ function renderMessages(searchTerm) {
 
   state.messages.forEach((message) => {
     const messageRow = document.createElement('article');
-    const isSelf = state.selfName && message.sender === state.selfName;
+    const isSelf = state.selfNames.includes(message.sender);
 
     messageRow.className = `chat-row ${isSelf ? 'outgoing' : 'incoming'}`;
 
