@@ -73,6 +73,7 @@ const EMOTICON_MAP = {
   '(c)': '☕',
   '(S)': '🌙',
   '(s)': '🌙',
+  '(#)': '☀️',
   '(*)': '⭐',
   '(8)': '🎶',
   '(R)': '🌈',
@@ -118,7 +119,7 @@ searchInput.addEventListener('keydown', (event) => {
 identitySelect.addEventListener('change', () => {
   state.selfName = identitySelect.value;
   renderMessages(state.searchTerm);
-  setStatus(`目前以「${state.selfName}」作為本人身份顯示`);
+  setStatus(`目前以「${formatDisplayName(state.selfName)}」作為本人身份顯示`);
 });
 
 function setStatus(message) {
@@ -208,7 +209,7 @@ function populateIdentityOptions() {
   participantNames.forEach((name) => {
     const option = document.createElement('option');
     option.value = name;
-    option.textContent = name;
+    option.textContent = formatDisplayName(name);
     identitySelect.appendChild(option);
   });
 
@@ -245,7 +246,7 @@ function renderMessages(searchTerm) {
 
     const meta = document.createElement('div');
     meta.className = 'message-meta';
-    meta.textContent = `👤 ${message.sender} · ${formatDate(message.timestamp)}`;
+    meta.textContent = `👤 ${formatDisplayName(message.sender)} · ${formatDate(message.timestamp)}`;
 
     const bubble = document.createElement('div');
     bubble.className = 'message-bubble';
@@ -327,6 +328,13 @@ function replaceEmoticons(html) {
     output = output.replace(regex, emoji);
   });
   return output;
+}
+
+function formatDisplayName(name) {
+  if (!name) {
+    return '未知發送者';
+  }
+  return replaceEmoticons(name);
 }
 
 function showError(message) {
