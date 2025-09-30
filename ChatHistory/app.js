@@ -1,5 +1,6 @@
 const fileInput = document.getElementById('fileInput');
 const reloadBtn = document.getElementById('reloadBtn');
+const downloadBtn = document.getElementById('downloadBtn');
 const searchInput = document.getElementById('searchInput');
 const searchBtn = document.getElementById('searchBtn');
 const chatContainer = document.getElementById('chatContainer');
@@ -126,6 +127,7 @@ identitySelect.addEventListener('keydown', (event) => {
   }
 });
 addIdentityBtn.addEventListener('click', addCurrentIdentity);
+downloadBtn.addEventListener('click', exportConversation);
 
 // Updates the live status bar with feedback about loading or search results.
 function setStatus(message) {
@@ -175,6 +177,7 @@ function enableControls() {
   searchInput.disabled = false;
   searchBtn.disabled = false;
   searchInput.focus();
+  downloadBtn.disabled = false;
 }
 
 // Resets application state and UI back to the initial empty landing view.
@@ -189,6 +192,7 @@ function resetApp() {
   searchInput.disabled = true;
   searchBtn.disabled = true;
   reloadBtn.disabled = true;
+  downloadBtn.disabled = true;
   identityGroup.hidden = true;
   identitySelect.innerHTML = '';
   renderSelectedIdentities();
@@ -209,6 +213,65 @@ function triggerSearch() {
     return;
   }
   renderMessages(state.searchTerm);
+}
+
+// Builds a two-column CSV export and forces a browser download into the Export folder.
+function exportConversation() {
+  if (!state.messages.length) {
+    setStatus('尚未載入任何對話，無法匯出。');
+    return;
+  }
+
+  const rows = buildExportRows();
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const downloadName = buildExportFileName();
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = downloadName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+  setStatus(`已匯出對話為 ${downloadName}`);
+}
+
+function buildExportRows() {
+  const header = '發言時間,發言人,發言內容';
+  const rows = state.messages.map((message) => {
+    const isSelf = state.selfNames.includes(message.sender);
+    const speaker = isSelf ? '自己' : '對方';
+    const lineText = formatExportText(message.text);
+    const timestamp = formatExportTimestamp(message.timestamp);
+    return `${encodeCsvField(timestamp)},${encodeCsvField(speaker)},${encodeCsvField(lineText)}`;
+  });
+  return [header, ...rows];
+}
+
+function buildExportFileName() {
+  const baseName = (state.fileName || 'conversation').replace(/\.[^/.]+$/, '');
+  const trimmed = baseName.trim() || 'conversation';
+  const safeName = trimmed.replace(/[\\/:*?"<>|]+/g, '_');
+  return `Export/${safeName}.csv`;
+}
+
+function formatExportText(text) {
+  if (typeof text !== 'string') {
+    return '（無內容）';
+  }
+  const normalized = text.replace(/\r?\n/g, ' ').replace(/\t/g, ' ').trim();
+  return normalized || '（無內容）';
+}
+
+function encodeCsvField(text) {
+  const safe = text.replace(/"/g, '""');
+  return `"${safe}"`;
+}
+
+function formatExportTimestamp(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return formatDate(value);
+  }
+  return '未知時間';
 }
 
 // Populates the identity dropdown so users can choose which nickname represents them.
