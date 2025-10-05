@@ -1,3 +1,6 @@
+# Demo Site:
+https://friendschatbot.netlify.app
+
 # MSN Chat Viewer
 
 MSN Chat Viewer is a single-page web app for browsing exported MSN Messenger XML logs directly in the browser. It offers chat-style rendering, nickname selection, keyword highlights, and automatic conversion of classic MSN emoticon shortcuts into modern emoji.
